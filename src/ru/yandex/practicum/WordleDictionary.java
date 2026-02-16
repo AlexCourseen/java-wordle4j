@@ -6,23 +6,30 @@ import java.util.Random;
 
 public class WordleDictionary {
 
+    private final Log log;
     private final List<String> words;
-    private static String hiddenWord;
+    private String hiddenWord;
+    private Random random = new Random();
+    private final int correctLength = 5;
 
-
-    WordleDictionary(List<String> wordsToEdit) {
+    public WordleDictionary(List<String> wordsToEdit, Log log) {
+        this.log = log;
         this.words = getEditedDictionary(wordsToEdit);
     }
 
     private List<String> getEditedDictionary(List<String> words) {
         List<String> editedDictionary = new ArrayList<>();
-        if (!words.isEmpty()) {
-            for (String word : words) {
-                if (isWordLengthCorrect(word)) {
-                    String editedWord = editWord(word);
-                    editedDictionary.add(editedWord);
+        try {
+            if (!words.isEmpty()) {
+                for (String word : words) {
+                    if (isWordLengthCorrect(word)) {
+                        String editedWord = editWord(word);
+                        editedDictionary.add(editedWord);
+                    }
                 }
             }
+        } catch (DictionaryIsEmptyException e) {
+            log.toLog(e);
         }
         return editedDictionary;
     }
@@ -36,7 +43,6 @@ public class WordleDictionary {
     }
 
     public String getRandomWord() {
-        Random random = new Random(); // Не передавайте сюда размер списка
         return words.get(random.nextInt(words.size()));
     }
 
@@ -44,7 +50,7 @@ public class WordleDictionary {
         this.hiddenWord = getRandomWord();
     }
 
-    public static boolean isHiddenWord(String word) {
+    public boolean isHiddenWord(String word) {
         return word.equals(hiddenWord);
     }
 
@@ -53,11 +59,13 @@ public class WordleDictionary {
     }
 
     public boolean isWordLengthCorrect(String word) {
-        int correctLength = 5;
         return word.length() == correctLength;
     }
 
-    public static String calculateMask(String answer, String target) {
+    /* Не стал "упрощать" метод, т.к. на нём завязано получение подсказок, которые помогают подобрать решение.
+    Слишком много времени, боли, пота, крови было в него вложено ( сейчас игра работает как просят в тз
+    */
+    public String calculateMask(String answer, String target) {
         char[] result = new char[5];
         char[] targetChar = target.toCharArray();
         char[] answerChar = answer.toCharArray();
@@ -88,7 +96,7 @@ public class WordleDictionary {
         return new String(result);
     }
 
-    public static String getHiddenWord() {
+    public String getHiddenWord() {
         return hiddenWord;
     }
 }

@@ -1,14 +1,12 @@
 package ru.yandex.practicum;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
-import static ru.yandex.practicum.WordleDictionary.calculateMask;
 import static ru.yandex.practicum.WordleDictionary.editWord;
-import static ru.yandex.practicum.WordleDictionary.isHiddenWord;
 
 public class WordleGame {
 
@@ -17,22 +15,19 @@ public class WordleGame {
     private WordleDictionary dictionary;
     private Log log;
     private List<String> rawWords;
+    private Random random = new Random();
 
-    private LinkedHashMap<String, Integer> wordsUsed;
 
-    WordleGame(WordleDictionary dictionary, Log log) {
+    private LinkedList<String> wordsUsed;
+
+    public WordleGame(WordleDictionary dictionary, Log log) {
         this.dictionary = dictionary;
         this.steps = 6;
         this.log = log;
         this.rawWords = new ArrayList<>(dictionary.getWords());
-        this.wordsUsed = new LinkedHashMap<>();
-        try {
-            dictionary.setHiddenWord();
-        } catch (Exception e) {
-            log.toLog(e);
-        }
+        this.wordsUsed = new LinkedList<>();
+        dictionary.setHiddenWord();
     }
-
 
     public int getSteps() {
         return steps;
@@ -47,17 +42,15 @@ public class WordleGame {
             try {
                 if (!input.equals("")) {
                     answer = input;
-                    if (isCorrectAnswer()) {
-                        answer = editWord(answer);
-                    } else {
-                        answer = null;
-                    }
+                    checkAnswer();
                 } else {
                     answer = getHint();
                     System.out.println(answer);
                 }
-            } catch (WordNotFoundException | IncorrectWordLengthException e) {
+            } catch (WordNotFoundException | IncorrectWordLengthException | WordIsNotCirillicException
+                     | WordIsAlreadyUsedException e) {
                 System.out.println(e.getMessage());
+                log.toLog(e);
                 answer = null;
             } catch (Exception e) {
                 log.toLog(e);
@@ -65,30 +58,29 @@ public class WordleGame {
             }
         }
 
-        String mask = calculateMask(answer, dictionary.getHiddenWord());
+        String mask = dictionary.calculateMask(answer, dictionary.getHiddenWord());
         System.out.println(mask);
 
-        wordsUsed.put(answer, 1);
+        wordsUsed.add(answer);
         steps--;
     }
 
-    public boolean isCorrectAnswer() throws WordNotFoundException, IncorrectWordLengthException {
+    public void checkAnswer() throws WordNotFoundException, IncorrectWordLengthException, WordIsNotCirillicException,
+            WordIsAlreadyUsedException {
         if (answer.matches("[a-zA-Z]+")) {
-            System.out.println("Слово должно быть из русских букв");
-            return false;
+            throw new WordIsNotCirillicException("Используйте только русские буквы");
         }
         if (!dictionary.isWordLengthCorrect(answer)) {
             throw new IncorrectWordLengthException("Слово должно быть из 5 букв");
         }
         if (!dictionary.isWordInDictionary(answer)) {
-            throw new WordNotFoundException("Такого слова нет в словаре");
+            throw new WordNotFoundException("Слова нет в словаре");
         }
-        if (wordsUsed.containsKey(editWord(answer))) {
-            System.out.println("Вы уже использовали это слово");
-            return false;
+        if (wordsUsed.contains(editWord(answer))) {
+            throw new WordIsAlreadyUsedException("Вы уже использовали это слово");
         }
-        return true;
     }
+
 
     public String getHint() {
         String hint;
@@ -96,19 +88,16 @@ public class WordleGame {
             hint = dictionary.getRandomWord();
             return hint;
         }
-        String lastInput = "";
-        for (String key : wordsUsed.keySet()) {
-            lastInput = key;
-        }
-        String lastMask = calculateMask(lastInput, dictionary.getHiddenWord());
+        String lastInput = wordsUsed.getLast();
+        String lastMask = dictionary.calculateMask(lastInput, dictionary.getHiddenWord());
 
         List<String> maybeWords = new ArrayList<>();
 
         for (String word : rawWords) {
-            if (wordsUsed.containsKey(word)) {
+            if (wordsUsed.contains(word)) {
                 continue;
             }
-            if (calculateMask(lastInput, word).equals(lastMask)) {
+            if (dictionary.calculateMask(lastInput, word).equals(lastMask)) {
                 maybeWords.add(word);
             }
         }
@@ -116,13 +105,12 @@ public class WordleGame {
             return dictionary.getRandomWord();
         }
 
-        Random random = new Random();
         hint = maybeWords.get(random.nextInt(maybeWords.size()));
         return hint;
     }
 
 
     public boolean isWin() {
-        return isHiddenWord(answer);
+        return dictionary.isHiddenWord(answer);
     }
 }

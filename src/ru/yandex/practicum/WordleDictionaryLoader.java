@@ -20,10 +20,8 @@ public class WordleDictionaryLoader {
             throw new FileNotFoundException("Файл словаря отсутствует.");
         }
 
-        WordleDictionary dictionary;
         List<String> words = new ArrayList<>();
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(file, UTF_8));
+        try (BufferedReader br = new BufferedReader(new FileReader(file, UTF_8))) {
             String line;
             while (br.ready()) {
                 line = br.readLine().trim();
@@ -32,7 +30,7 @@ public class WordleDictionaryLoader {
         } catch (IOException e) {
             log.toLog(e);
         }
-        dictionary = new WordleDictionary(words);
+        WordleDictionary dictionary = new WordleDictionary(words, log);
         return dictionary;
     }
 }

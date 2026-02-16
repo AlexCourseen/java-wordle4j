@@ -9,7 +9,7 @@ public class Log implements AutoCloseable {
 
     private final PrintWriter writer;
 
-    Log(String fileLog) throws IOException {
+    public Log(String fileLog) throws IOException {
         this.writer = new PrintWriter(new FileWriter(fileLog, StandardCharsets.UTF_8));
     }
 
